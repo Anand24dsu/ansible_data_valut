@@ -237,78 +237,14 @@ ansible-playbook yugabytedb_data.yml --ask-vault-pass
 
 When prompted, enter the vault password you set in step 2.
 
-### 9. Troubleshooting SSH Connection Issues
 
-If you encounter SSH connection issues like:
 
-```
-TASK [Check if YugabyteDB port is reachable] ***********************************************************
-fatal: [hostname]: UNREACHABLE! => {"changed": false, "msg": "Failed to connect to the host via ssh: ssh: connect to host X.X.X.X port 22: Connection timed out", "unreachable": true}
-```
-
-Try these troubleshooting steps:
-
-1. **Verify direct SSH access:**
-   ```bash
-   ssh username@host_ip
-   ```
-
-2. **Check firewall settings:** Ensure port 22 is open on the server and any network firewalls.
-
-3. **Update inventory with explicit SSH details:**
-   ```ini
-   [all]
-  34.133.178.124 ansible_user=anand ansible_python_interpreter=/usr/bin/python
-
-   ```
-
-4. **Test basic connectivity:**
-   ```bash
-   ansible -i inventory.ini yugabytedb-node -m ping -vvv
-   ```
-
-### 10. Additional Vault Commands
-
-- **Edit vault file:**
-  ```bash
-  ansible-vault edit group_vars/all/vault.yml
-  ```
-
-- **View vault file content:**
-  ```bash
-  ansible-vault view group_vars/all/vault.yml
-  ```
-
-- **Encrypt an existing file:**
-  ```bash
-  ansible-vault encrypt path/to/file.yml
-  ```
-
-- **Decrypt a vault file:**
-  ```bash
-  ansible-vault decrypt path/to/file.yml
-  ```
-
-- **Change vault password:**
-  ```bash
-  ansible-vault rekey group_vars/all/vault.yml
-  ```
-
-### 11. Using Vault Password File (Optional)
-
-For automation purposes, you can store the vault password in a file:
-
-```bash
-echo "your_vault_password" > ~/.vault_pass.txt
-chmod 600 ~/.vault_pass.txt
-```
 
 Update your `ansible.cfg`:
 ```ini
 [defaults]
 inventory = inventory.ini
 host_key_checking = False
-vault_password_file = ~/.vault_pass.txt
 ```
 
 Then run without `--ask-vault-pass`:
