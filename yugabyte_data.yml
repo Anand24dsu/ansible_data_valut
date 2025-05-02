@@ -27,7 +27,7 @@
       when: create_db_if_not_exists and (port_check.state is defined and port_check.state == 'started')
       register: db_creation
       ignore_errors: true
-      no_log: true  # Hide sensitive output
+      no_log: true  
     
     - name: Copy DDL SQL file to remote server
       copy:
@@ -53,7 +53,7 @@
         path: "{{ ddl_sql_remote_path }}"
       when: port_check.state is defined and port_check.state == 'started'
       register: ddl_query_result
-      no_log: true  # Hide sensitive output
+      no_log: true  
     
     - name: Execute Data SQL (insert rows)
       community.postgresql.postgresql_script:
@@ -65,7 +65,7 @@
         path: "{{ data_sql_remote_path }}"
       when: port_check.state is defined and port_check.state == 'started'
       register: data_query_result
-      no_log: true  # Hide sensitive output
+      no_log: true  
     
     - name: Query all required tables
       community.postgresql.postgresql_query:
@@ -86,7 +86,7 @@
       register: query_results
       when: port_check.state is defined and port_check.state == 'started'
       ignore_errors: true
-      no_log: true  # Hide sensitive output
+      no_log: true  
     
     - name: Display query results
       debug:
