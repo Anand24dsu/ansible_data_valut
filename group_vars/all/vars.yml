@@ -1,0 +1,13 @@
+# Reference to vault variables
+db_user: "{{ vault_db_user }}"
+db_password: "{{ vault_db_password }}"
+
+# Other non-sensitive variables
+db_name: testdb
+db_host: "10.128.0.57"
+db_port: 5433
+create_db_if_not_exists: true
+ddl_sql_local_path: ./northwind_ddl.sql
+data_sql_local_path: ./northwind_data.sql
+ddl_sql_remote_path: /tmp/northwind_ddl.sql
+data_sql_remote_path: /tmp/northwind_data.sql 

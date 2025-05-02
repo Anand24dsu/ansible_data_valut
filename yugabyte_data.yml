@@ -1,0 +1,95 @@
+---
+- name: Insert data into YugabyteDB using Ansible
+  hosts: all
+  gather_facts: false
+  
+  tasks:
+    - name: Check if YugabyteDB port is reachable
+      wait_for:
+        host: "{{ db_host }}"
+        port: "{{ db_port }}"
+        timeout: 10
+      register: port_check
+      ignore_errors: true
+    
+    - name: Display connection status
+      debug:
+        msg: "YugabyteDB port status: {{ 'Reachable' if port_check.state is defined and port_check.state == 'started' else 'Unreachable' }}"
+    
+    - name: Ensure database exists
+      community.postgresql.postgresql_db:
+        name: "{{ db_name }}"
+        login_user: "{{ db_user }}"
+        login_password: "{{ db_password }}"
+        login_host: "{{ db_host }}"
+        login_port: "{{ db_port }}"
+        state: present
+      when: create_db_if_not_exists and (port_check.state is defined and port_check.state == 'started')
+      register: db_creation
+      ignore_errors: true
+      no_log: true  # Hide sensitive output
+    
+    - name: Copy DDL SQL file to remote server
+      copy:
+        src: "{{ ddl_sql_local_path }}"
+        dest: "{{ ddl_sql_remote_path }}"
+        mode: '0644'
+      when: port_check.state is defined and port_check.state == 'started'
+    
+    - name: Copy Data SQL file to remote server
+      copy:
+        src: "{{ data_sql_local_path }}"
+        dest: "{{ data_sql_remote_path }}"
+        mode: '0644'
+      when: port_check.state is defined and port_check.state == 'started'
+    
+    - name: Execute DDL SQL (create tables)
+      community.postgresql.postgresql_script:
+        db: "{{ db_name }}"
+        login_user: "{{ db_user }}"
+        login_password: "{{ db_password }}"
+        login_host: "{{ db_host }}"
+        login_port: "{{ db_port }}"
+        path: "{{ ddl_sql_remote_path }}"
+      when: port_check.state is defined and port_check.state == 'started'
+      register: ddl_query_result
+      no_log: true  # Hide sensitive output
+    
+    - name: Execute Data SQL (insert rows)
+      community.postgresql.postgresql_script:
+        db: "{{ db_name }}"
+        login_user: "{{ db_user }}"
+        login_password: "{{ db_password }}"
+        login_host: "{{ db_host }}"
+        login_port: "{{ db_port }}"
+        path: "{{ data_sql_remote_path }}"
+      when: port_check.state is defined and port_check.state == 'started'
+      register: data_query_result
+      no_log: true  # Hide sensitive output
+    
+    - name: Query all required tables
+      community.postgresql.postgresql_query:
+        db: "{{ db_name }}"
+        login_user: "{{ db_user }}"
+        login_password: "{{ db_password }}"
+        login_host: "{{ db_host }}"
+        login_port: "{{ db_port }}"
+        query: "SELECT * FROM public.{{ item }};"
+      loop:
+        - categories
+        - employees
+        - territories
+        - orders
+        - products
+        - us_states
+        - order_details
+      register: query_results
+      when: port_check.state is defined and port_check.state == 'started'
+      ignore_errors: true
+      no_log: true  # Hide sensitive output
+    
+    - name: Display query results
+      debug:
+        msg: "{{ item.query_result }}"
+      loop: "{{ query_results.results }}"
+      when: item.query_result is defined
